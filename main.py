@@ -1,145 +1,131 @@
-import pygame
-import sys
-import time
+class OutputManager:
+    @staticmethod
+    def print_out(data):
+        print(data)
 
-pygame.init()
-screen = pygame.display.set_mode((1020, 950))
-pygame.display.set_caption("Clickyer")
+    @staticmethod
+    def print_in():
+        return input()
 
-image = pygame.image.load("reactor.png").convert_alpha()
-image = pygame.transform.scale(image, (400, 400))
-x, y = 200, 100
-rect = image.get_rect(topleft=(x, y))
 
-font = pygame.font.SysFont(None, 15)
-font_big = pygame.font.SysFont(None, 60)
+class PointManager:
+    def __init__(self):
+        self.points = 0
+        self.idle = 0
+        self.click_multiplier = 1
 
-jump_height = 10
-jumping = False
-jump_offset = 0
-jump_speed = 4
-going_up = True
+    def click(self):
+        self.points += 1 * self.click_multiplier
 
-clock = pygame.time.Clock()
+    def idle_point(self):
+        self.points += self.idle
 
-points = 0
-click_multiplier = 1
+    def can_afford(self, cost):
+        return cost <= self.points
 
-last_idle_time = time.time()
-idle_income = 0
+    def spend_points(self, cost):
+        self.points -= cost
 
-upgrades = [
-    {"name": "Tiny Reactor Boost", "cost": 5, "click_mult": 1, "idle": 0},
-    {"name": "Small Capacitor", "cost": 15, "click_mult": 2, "idle": 0},
-    {"name": "Heat Sink", "cost": 30, "click_mult": 0, "idle": 1},
-    {"name": "Power Amplifier", "cost": 50, "click_mult": 3, "idle": 0},
-    {"name": "Quantum Flux", "cost": 80, "click_mult": 0, "idle": 3},
-    {"name": "Nano Circuit", "cost": 120, "click_mult": 4, "idle": 0},
-    {"name": "Superconductor", "cost": 170, "click_mult": 0, "idle": 5},
-    {"name": "Particle Accelerator", "cost": 230, "click_mult": 5, "idle": 0},
-    {"name": "Dark Matter Collector", "cost": 300, "click_mult": 0, "idle": 10},
-    {"name": "Plasma Converter", "cost": 380, "click_mult": 6, "idle": 0},
-    {"name": "Fusion Core", "cost": 470, "click_mult": 0, "idle": 15},
-    {"name": "Antimatter Storage", "cost": 570, "click_mult": 8, "idle": 0},
-    {"name": "Graviton Emitter", "cost": 680, "click_mult": 0, "idle": 20},
-    {"name": "Chrono Stabilizer", "cost": 800, "click_mult": 10, "idle": 0},
-    {"name": "Dimensional Rift", "cost": 930, "click_mult": 0, "idle": 30},
-    {"name": "Energy Matrix", "cost": 1070, "click_mult": 12, "idle": 0},
-    {"name": "Singularity Reactor", "cost": 1220, "click_mult": 0, "idle": 40},
-    {"name": "Neutrino Collector", "cost": 1380, "click_mult": 15, "idle": 0},
-    {"name": "Omega Core", "cost": 1550, "click_mult": 0, "idle": 50},
-    {"name": "Eternity Engine", "cost": 1730, "click_mult": 20, "idle": 0},
-]
 
-upgrade_levels = [0] * len(upgrades)
+class Shop:
+    def __init__(self, point_manager):
+        """
+        :param point_manager: PointManager
+        :type point_manager: PointManager
+        """
+        self.upgrades = [
+            {"name": "Tiny Reactor Boost", "cost": 5, "click_mult": 1, "idle": 0},
+            {"name": "Small Capacitor", "cost": 15, "click_mult": 2, "idle": 0},
+            {"name": "Heat Sink", "cost": 30, "click_mult": 0, "idle": 1},
+            {"name": "Power Amplifier", "cost": 50, "click_mult": 3, "idle": 0},
+            {"name": "Quantum Flux", "cost": 80, "click_mult": 0, "idle": 3},
+            {"name": "Nano Circuit", "cost": 120, "click_mult": 4, "idle": 0},
+            {"name": "Superconductor", "cost": 170, "click_mult": 0, "idle": 5},
+            {"name": "Particle Accelerator", "cost": 230, "click_mult": 5, "idle": 0},
+            {"name": "Dark Matter Collector", "cost": 300, "click_mult": 0, "idle": 10},
+            {"name": "Plasma Converter", "cost": 380, "click_mult": 6, "idle": 0},
+            {"name": "Fusion Core", "cost": 470, "click_mult": 0, "idle": 15},
+            {"name": "Antimatter Storage", "cost": 570, "click_mult": 8, "idle": 0},
+            {"name": "Graviton Emitter", "cost": 680, "click_mult": 0, "idle": 20},
+            {"name": "Chrono Stabilizer", "cost": 800, "click_mult": 10, "idle": 0},
+            {"name": "Dimensional Rift", "cost": 930, "click_mult": 0, "idle": 30},
+            {"name": "Energy Matrix", "cost": 1070, "click_mult": 12, "idle": 0},
+            {"name": "Singularity Reactor", "cost": 1220, "click_mult": 0, "idle": 40},
+            {"name": "Neutrino Collector", "cost": 1380, "click_mult": 15, "idle": 0},
+            {"name": "Omega Core", "cost": 1550, "click_mult": 0, "idle": 50},
+            {"name": "Eternity Engine", "cost": 1730, "click_mult": 20, "idle": 0},
+        ]
+        self.point_manager = point_manager
+        self.bought_upgrades = []
 
-def draw_panel():
-    panel_rect = pygame.Rect(800, 0, 200, 660)
-    pygame.draw.rect(screen, (40, 40, 40), panel_rect)
+    def add_upgrade(self, name):
+        for upgrade in self.upgrades:
+            if upgrade["name"] == name:
+                was_upgrade = False
+                self.point_manager.idle += upgrade["idle"]
+                self.point_manager.click_multiplier += upgrade["click_mult"]
+                for bought_upgrade in self.bought_upgrades:
+                    if upgrade["name"] in bought_upgrade:
+                        was_upgrade = True
+                        bought_upgrade[1] += 1
+                        break
+                    else:
+                        was_upgrade = False
+                if not was_upgrade:
+                    self.bought_upgrades.append([upgrade["name"], 1])
 
-    title_surf = font_big.render("Upgrades", True, (255, 255, 255))
-    screen.blit(title_surf, (810, 10))
+    def count_upgrades(self, name):
+        for bought_upgrade in self.bought_upgrades:
+            if name in bought_upgrade:
+                return bought_upgrade[1]
+        return 0
 
-    y_offset = 70
-    for i, upgrade in enumerate(upgrades):
-        cost = upgrade["cost"] + upgrade_levels[i] * (upgrade["cost"] // 2)  # cena rośnie o 50% co zakup
-        name = upgrade["name"]
-        text_color = (255, 255, 255) if points >= cost else (150, 150, 150)
-        text = f"{name} - Cost: {cost} EP"
-        text_surf = font.render(text, True, text_color)
-        screen.blit(text_surf, (810, y_offset))
-
-        level_surf = font.render(f"Lv: {upgrade_levels[i]}", True, (200, 200, 0))
-        screen.blit(level_surf, (970, y_offset))
-
-        y_offset += 30
-
-def buy_upgrade(mouse_pos):
-    global points, click_multiplier, idle_income
-
-    if mouse_pos[0] < 800:
-        return
-
-    y_offset = 70
-    for i, upgrade in enumerate(upgrades):
-        cost = upgrade["cost"] + upgrade_levels[i] * (upgrade["cost"] // 2)
-        rect = pygame.Rect(800, y_offset, 200, 30)
-        if rect.collidepoint(mouse_pos):
-            if points >= cost:
-                points -= cost
-                upgrade_levels[i] += 1
-                click_multiplier += upgrade["click_mult"]
-                idle_income += upgrade["idle"]
-                print(f"Bought {upgrade['name']}! Click Multiplier: {click_multiplier}, Idle Income: {idle_income}")
+    def upgrades_list(self):
+        output = ""
+        for nr, upgrade in enumerate(self.upgrades):
+            if upgrade['idle'] == 0:
+                output += f"""
+{nr}. {upgrade['name']} Cost: {upgrade['cost']} Idle: {upgrade['click_mult']} Already bought: {self.count_upgrades(upgrade['name'])}
+"""
             else:
-                print("Not enough EP!")
-            break
-        y_offset += 30
+                output += f"""
+{nr}. {upgrade['name']} Cost: {upgrade['cost']} Click Multiplier: {upgrade['idle']} Already bought: {self.count_upgrades(upgrade['name'])}
+"""
+        return output
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                if rect.collidepoint(event.pos) and not jumping:
-                    points += click_multiplier
-                    jumping = True
-                    jump_offset = 0
-                    going_up = True
-                else:
-                    buy_upgrade(event.pos)
+    def shop_menu(self):
+        OutputManager.print_out("Which one do you want to buy?")
+        OutputManager.print_out(self.upgrades_list())
+        upgrade_nr = 0
+        while True:
+            try:
+                upgrade_nr = int(OutputManager.print_in())
+                break
+            except ValueError:
+                OutputManager.print_out("It has to be a number!")
+        cost = self.upgrades[upgrade_nr]["cost"]
+        if self.point_manager.can_afford(cost=cost):
+            self.add_upgrade(self.upgrades[upgrade_nr]["name"])
+            self.upgrades[upgrade_nr]['cost'] = int(self.upgrades[upgrade_nr]['cost'] * 1.20)
+            self.point_manager.spend_points(cost=cost)
 
-    now = time.time()
-    if now - last_idle_time >= 1:
-        points += idle_income
-        last_idle_time = now
 
-    screen.fill((30, 30, 30))
+class Achievements:
+    def __init__(self):
+        self.achievements = [
+            {"id": "first_click", "name": "First Click", "reward": 10, "unlocked": False, "condition_id": "clicks_1"},
+            {"id": "hundred_clicks", "name": "Hundred Clicks", "reward": 50, "unlocked": False,
+             "condition_id": "clicks_100"},
+            {"id": "idle_master", "name": "Idle Master", "reward": 5000, "unlocked": False, "condition_id": "idle_1000"},
+            {"id": "upgrade_collector", "name": "Upgrade Collector", "reward": 75, "unlocked": False,
+             "condition_id": "upgrades_10"},
+        ]
+        self.conditions = {
+            "clicks_1": {"description": "Make your first click", "condition_name": "click", "condition_value": 1},
+            "clicks_100": {"description": "Make 100 clicks", "condition_name": "click", "condition_value": 100},
+            "idle_1000": {"description": "Accumulate 1000 idle points", "condition_name": "idle", "condition_value": 1000},
+            "upgrades_10": {"description": "Buy 10 upgrades", "condition_name": "upgrades", "condition_value": 10},
+        }
 
-    if jumping:
-        if going_up:
-            jump_offset += jump_speed
-            if jump_offset >= jump_height:
-                jump_offset = jump_height
-                going_up = False
-        else:
-            jump_offset -= jump_speed
-            if jump_offset <= 0:
-                jump_offset = 0
-                jumping = False
-
-    current_y = y - jump_offset
-
-    text_surface = font_big.render(f"EP: {points}", True, (255, 255, 255))
-    text_rect = text_surface.get_rect(center=(screen.get_width() // 2, 50))
-    screen.blit(text_surface, text_rect)
-
-    screen.blit(image, (x, current_y))
-    rect.topleft = (x, current_y)
-
-    draw_panel()
-
-    pygame.display.update()
-    clock.tick(60)
+    def check_achv(self):
+        pass
