@@ -10,12 +10,14 @@ class OutputManager:
 
 class PointManager:
     def __init__(self):
+        self.total_clicks = 0
         self.points = 0
         self.idle = 0
         self.click_multiplier = 1
 
     def click(self):
         self.points += 1 * self.click_multiplier
+        self.total_clicks += 1
 
     def idle_point(self):
         self.points += self.idle
@@ -114,9 +116,9 @@ class Achievements:
     def __init__(self):
         self.achievements = [
             {"id": "first_click", "name": "First Click", "reward": 10, "unlocked": False, "condition_id": "clicks_1"},
-            {"id": "hundred_clicks", "name": "Hundred Clicks", "reward": 50, "unlocked": False,
+            {"id": "hundred_clicks", "name": "Hundred Clicks", "reward": 300, "unlocked": False,
              "condition_id": "clicks_100"},
-            {"id": "idle_master", "name": "Idle Master", "reward": 5000, "unlocked": False, "condition_id": "idle_1000"},
+            {"id": "idle_master", "name": "Idle Master", "reward": 50000, "unlocked": False, "condition_id": "idle_1000"},
             {"id": "upgrade_collector", "name": "Upgrade Collector", "reward": 75, "unlocked": False,
              "condition_id": "upgrades_10"},
         ]
@@ -129,3 +131,17 @@ class Achievements:
 
     def check_achv(self):
         pass
+    # TODO:
+    #  - [] Add function that checks if achievement is able to unlock
+    #  - [] Add function that gives reward for achievement
+    #  - [] Add function that spits out information about unlocked achievement
+    #  - [] Add time in game stat
+    #  - [] Add maximum number of upgrades
+    #  - [] Add rebirths that gives rebirths point
+    #  - [] Add rebirth shop with massive bonuses
+    #  - [] Add main function / main game loop
+    #  - [] Add function/class that is used to show current statistics
+    #  - [] Add class that is used to save n' load game
+    #  - [] Add "turbo" boosts that are expensive but useful
+    #  - [] Add challenge mode (e.g. only idle, or no shop)
+    #  - [] Add export/import save via encoded string
