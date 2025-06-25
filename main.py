@@ -1,6 +1,10 @@
 import datetime
 import json
 
+class GUIManager:
+    def __init__(self):
+        pass
+
 
 class OutputManager:
     @staticmethod
@@ -30,7 +34,6 @@ class SavegameManager:
         self.rebirth = rebirth
         self.save_filename = "save.json"
 
-
     def save_game(self):
         current_time = datetime.datetime.now()
         data = {
@@ -40,8 +43,8 @@ class SavegameManager:
             "total_clicks": self.points_manager.total_clicks,
             "total_points": self.points_manager.total_points,
             "points": self.points_manager.points,
-            "idle":  self.points_manager.idle,
-            "click_multiplier":  self.points_manager.click_multiplier,
+            "idle": self.points_manager.idle,
+            "click_multiplier": self.points_manager.click_multiplier,
 
             # Shop
             "upgrades": self.shop.upgrades,
@@ -507,7 +510,12 @@ class Rebirth:
             ]
 
     def amount_to_next_rebirth(self):
-        OutputManager.print_out(f"{self.point_manager.points}/{self.rebirth_condition} - {int(self.point_manager.points/self.rebirth_condition)*100}")
+        OutputManager.print_out(
+            f"{self.point_manager.points}/{self.rebirth_condition} - {int(self.point_manager.points / self.rebirth_condition) * 100}")
+
+
+if __name__ == "__main__":
+    GUI = GUIManager()
 
 # TODO:
 #  - [x] Add function that checks if achievement is able to unlock
