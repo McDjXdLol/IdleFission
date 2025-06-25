@@ -1,9 +1,16 @@
 import datetime
 import json
 
+import customtkinter as ctk
+
+
 class GUIManager:
     def __init__(self):
-        pass
+        ctk.set_appearance_mode("dark")
+
+        self.app = ctk.CTk()
+        self.app.geometry("1280x720")
+        self.app.title("Clickyer")
 
 
 class OutputManager:
@@ -516,6 +523,8 @@ class Rebirth:
 
 if __name__ == "__main__":
     GUI = GUIManager()
+    app = GUI.app
+    app.mainloop()
 
 # TODO:
 #  - [x] Add function that checks if achievement is able to unlock
@@ -531,3 +540,22 @@ if __name__ == "__main__":
 #  - [ ] Add "turbo" boosts that are expensive but useful
 #  - [ ] Add challenge mode (e.g. only idle, or no shop)
 #  - [ ] Add export/import save via encoded string
+
+# TODO GUI:
+#  - [x] `Add main game loop function (update GUI elements and game state)`
+#  - [ ] `Add CTkLabel to display current points, total points, click multiplier, idle, rebirth points`
+#  - [ ] `Add CTkButton for clicking action, calling PointManager.click()`
+#  - [ ] `Add upgrade shop UI: list upgrades with costs and bought amounts, buttons to buy upgrades`
+#  - [ ] `Add rebirth shop UI with bonus list and buttons to buy rebirth bonuses`
+#  - [ ] `Implement achievements check and display unlocked achievements in GUI`
+#  - [ ] `Add save and load buttons, call SavegameManager.save_game() and load_game()`
+#  - [ ] `Create output log widget (e.g. CTkTextbox) to replace console print outputs`
+#  - [ ] `Add CTkEntry input box with confirm button to replace input() for user choices`
+#  - [ ] `Display stats in GUI using StatsManager.show_stats() output`
+#  - [ ] `Add idle point timer updating PointManager.idle_point() periodically`
+#  - [ ] `Implement rebirth reset logic and GUI refresh after rebirth()`
+#  - [ ] `Show notifications and messages in GUI for events like achievements unlocked, errors, etc.`
+#  - [ ] `Update upgrade costs dynamically in GUI after each purchase`
+#  - [ ] `Add progress bar showing progress to next rebirth`
+#  - [ ] `Design layout with frames/panels for points display, shop, rebirth, achievements, and logs`
+
