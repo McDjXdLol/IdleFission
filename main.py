@@ -1,5 +1,6 @@
 import datetime
 import json
+import sys
 from functools import partial
 
 import customtkinter as ctk
@@ -136,22 +137,46 @@ class GUIManager:
 
         # Buttons
         right_buttons_frame = self.add_Frame(main_window, 100, 0)
-        right_buttons_frame.pack(side="right", fill="y")
+        right_buttons_frame.pack(side="right")
+
+        stats_show_button = self.add_button(right_buttons_frame, "Stats",
+                                            func=lambda: self.toggle_frame(stats_frame, main_window, upgrade_menu),
+                                            width=100, height=50)
+
+        achievements_show_button = self.add_button(right_buttons_frame, "Achievements",
+                                                   func=lambda: self.toggle_frame(achievements_frame, main_window,
+                                                                                  upgrade_menu), width=100, height=50)
+
+        save_game_button = self.add_button(right_buttons_frame, "Save",
+                                           func=lambda: SavegameManager(self.point_manager, self.shop,
+                                                                        self.achievements, self.rebirth).save_game(
+                                               self.app),
+                                           width=100, height=50)
+
+        load_game_button = self.add_button(right_buttons_frame, "Load",
+                                           func=lambda: SavegameManager(self.point_manager, self.shop,
+                                                                        self.achievements, self.rebirth).load_game(
+                                               self.app),
+                                           width=100, height=50)
+
+        exit_button = self.add_button(right_buttons_frame, "Exit", func=sys.exit, width=100, height=50)
+
+        exit_button.pack(side="bottom", pady=5)
+        load_game_button.pack(side="bottom", pady=5)
+        save_game_button.pack(side="bottom", pady=5)
+        achievements_show_button.pack(side="bottom", pady=5)
+        stats_show_button.pack(side="bottom")
 
         # Statistics
         stats_frame = self.add_Frame(self.app, 0, 0)
         stats_frame.pack(fill="both", expand=True, side="right")
         stats_frame.pack_forget()
 
-        stats_show_button = self.add_button(right_buttons_frame, "Stats",
-                                            func=lambda: self.toggle_frame(stats_frame, main_window, upgrade_menu),
-                                            width=100, height=50)
-        stats_show_button.pack(side="top")
-
         stats_label = self.add_label_textvar(stats_frame, self.statistics_text_var, font_size=15)
         stats_label.pack()
 
-        exit_stats_button = self.add_button(stats_frame, "Exit", func=lambda: self.toggle_frame(stats_frame, main_window, upgrade_menu),
+        exit_stats_button = self.add_button(stats_frame, "Exit",
+                                            func=lambda: self.toggle_frame(stats_frame, main_window, upgrade_menu),
                                             width=100, height=50)
         exit_stats_button.pack()
 
@@ -162,11 +187,6 @@ class GUIManager:
         achievements_frame.pack_forget()
 
         # Elements
-
-        achievements_show_button = self.add_button(right_buttons_frame, "Achievements",
-                                                   func=lambda: self.toggle_frame(achievements_frame, main_window,
-                                                                                  upgrade_menu), width=100, height=50)
-        achievements_show_button.pack(side="top", pady=5)
 
         achv_label = self.add_label(achievements_frame, "ACHIEVEMENTS:", font_size=20)
         achv_label.pack()
@@ -273,7 +293,7 @@ class SavegameManager:
         self.rebirth = rebirth
         self.save_filename = "save.json"
 
-    def save_game(self):
+    def save_game(self, master):
         current_time = datetime.datetime.now()
         data = {
             # PointManager
@@ -304,8 +324,9 @@ class SavegameManager:
         }
         with open(self.save_filename, "w") as f:
             json.dump(data, f, indent=4)
+        Popup(master, "Game saved!")
 
-    def load_game(self):
+    def load_game(self, master):
         save_data = {}
         with open(self.save_filename, "r") as f:
             save_data = json.load(f)
@@ -333,6 +354,8 @@ class SavegameManager:
         self.rebirth.rebirths = save_data["rebirths"]
         self.rebirth.rebirths_points = save_data["rebirths_points"]
         self.rebirth.rebirth_condition = save_data["rebirth_condition"]
+
+        Popup(master, "Game loaded!")
 
 
 class StatsManager:
@@ -728,6 +751,7 @@ class Rebirth:
                 {"name": "Eternity Engine", "cost": 1730, "click_mult": 20, "idle": 0},
             ]
 
+
 if __name__ == "__main__":
     pt_manager = PointManager()
     shop = Shop(pt_manager)
@@ -754,19 +778,19 @@ if __name__ == "__main__":
 #  - [ ] Add export/import save via encoded string
 
 # TODO GUI:
+#  - [-] Create output log widget (e.g. CTkTextbox) to replace console print outputs
 #  - [x] Add main game loop function (update GUI elements and game state)
 #  - [x] Add CTkLabel to display current points, total points, click multiplier, idle, rebirth points
 #  - [x] Add CTkButton for clicking action, calling PointManager.click()
 #  - [x] Add upgrade shop UI: list upgrades with costs and bought amounts, buttons to buy upgrades
-#  - [ ] Add rebirth shop UI with bonus list and buttons to buy rebirth bonuses
-#  - [x] Implement achievements check and display unlocked achievements in GUI
-#  - [ ] Add save and load buttons, call SavegameManager.save_game() and load_game()
-#  - [-] Create output log widget (e.g. CTkTextbox) to replace console print outputs
-#  - [ ] Add CTkEntry input box with confirm button to replace input() for user choices
+#  - [x] Implement achievements check and display unlocked achievements in
 #  - [x] Display stats in GUI using StatsManager.show_stats() output
-#  - [ ] Add idle point timer updating PointManager.idle_point() periodically
-#  - [ ] Implement rebirth reset logic and GUI refresh after rebirth()
 #  - [x] Show notifications and messages in GUI for events like achievements unlocked, errors, etc.
 #  - [x] Update upgrade costs dynamically in GUI after each purchase
+#  - [x] Add save and load buttons, call SavegameManager.save_game() and load_game()
+#  - [ ] Add CTkEntry input box with confirm button to replace input() for user choices
+#  - [ ] Add rebirth shop UI with bonus list and buttons to buy rebirth bonuses
+#  - [ ] Add idle point timer updating PointManager.idle_point() periodically
+#  - [ ] Implement rebirth reset logic and GUI refresh after rebirth()
 #  - [ ] Add progress bar showing progress to next rebirth
 #  - [ ] Design layout with frames/panels for points display, shop, rebirth, achievements, and logs
