@@ -161,11 +161,16 @@ class GUIManager:
 
         exit_button = self.add_button(right_buttons_frame, "Exit", func=sys.exit, width=100, height=50)
 
-        exit_button.pack(side="bottom", pady=5)
+        show_rebirth_button = self.add_button(right_buttons_frame, "Rebirths",
+                                              func=lambda: self.toggle_frame(rebirth_frame, main_window, upgrade_menu),
+                                              width=100, height=50)
+
+        exit_button.pack(side="bottom", pady=15)
         load_game_button.pack(side="bottom", pady=5)
-        save_game_button.pack(side="bottom", pady=5)
-        achievements_show_button.pack(side="bottom", pady=5)
-        stats_show_button.pack(side="bottom")
+        save_game_button.pack(side="bottom", pady=0)
+        show_rebirth_button.pack(side="bottom", pady=10)
+        achievements_show_button.pack(side="bottom", pady=10)
+        stats_show_button.pack(side="bottom", pady=10)
 
         # Statistics
         stats_frame = self.add_Frame(self.app, 0, 0)
@@ -205,6 +210,20 @@ class GUIManager:
                                                                           upgrade_menu), width=100, height=50)
         exit_achv_button.pack(side="bottom")
 
+        # Rebirth
+
+        rebirth_frame = self.add_Frame(self.app, 200, 200)
+        rebirth_frame.pack(fill="both", expand=True)
+        rebirth_frame.pack_forget()
+
+        # Elements
+
+        rebirth_exit_button = self.add_button(rebirth_frame, "Exit",
+                                              func=lambda: self.toggle_frame(rebirth_frame, main_window,
+                                                                             upgrade_menu), width=100, height=50)
+
+        rebirth_exit_button.pack(side="bottom")
+
         # Upgrade Menu
 
         upgrade_menu = self.add_scrollableFrame(self.app, 200, 600)
@@ -222,7 +241,8 @@ class GUIManager:
         for nr, i in enumerate(self.shop.upgrades):
             button = self.add_button_textvar(upgrade_menu,
                                              text_var=self.upgrades_text_variables[nr][0],
-                                             func=partial(self.shop.shop_menu, i['name'], self.app), width=190, fg="#000000")
+                                             func=partial(self.shop.shop_menu, i['name'], self.app), width=190,
+                                             fg="#000000")
 
             button.pack(pady=5, ipady=5)
 
@@ -651,21 +671,25 @@ class Rebirth:
         self.rebirth_multiplier = 1.15
         self.rebirth_bonuses = [
             {
+                "id": "10_click_multi",
                 "name": "+10% Click Multiplier",
                 "type": "click",
                 "amount": 0.1
             },
             {
+                "id": "10_idle",
                 "name": "+10% Idle",
                 "type": "idle",
                 "amount": 0.1,
             },
             {
+                "id": "5_discount",
                 "name": "-5% Upgrade discount",
                 "type": "cost",
                 "amount": 0.05
             },
             {
+                "id": "100_start_points",
                 "name": "+100 points after rebirth",
                 "type": "starting_points",
                 "amount": 100
