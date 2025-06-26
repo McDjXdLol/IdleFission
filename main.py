@@ -19,7 +19,7 @@ class Popup(ctk.CTkToplevel):
         master_y = master.winfo_y()
         master_width = master.winfo_width()
 
-        popup_width = 250
+        popup_width = 550
         popup_height = 100
         x = master_x + (master_width // 2) - (popup_width // 2)
         y = master_y + 50
@@ -222,7 +222,7 @@ class GUIManager:
         for nr, i in enumerate(self.shop.upgrades):
             button = self.add_button_textvar(upgrade_menu,
                                              text_var=self.upgrades_text_variables[nr][0],
-                                             func=partial(self.shop.shop_menu, i['name']), width=190, fg="#000000")
+                                             func=partial(self.shop.shop_menu, i['name'], self.app), width=190, fg="#000000")
 
             button.pack(pady=5, ipady=5)
 
@@ -406,7 +406,7 @@ Rebirth Points: {rebirth.rebirths_points}
 Points needed for next rebirth: {rebirth.rebirth_condition}
 Starting points: {rebirth.rebirth_starting_points}
 Idle bonus: {point_manager.rebirth_idle * 100}%
-Click Multiplier: {point_manager.click_multiplier * 100}%
+Click Multiplier: {point_manager.rebirth_click_multiplier * 100}%
 """
         return output_text
 
@@ -469,7 +469,7 @@ class Shop:
         self.bought_upgrades = []
         self.MAX_UPGRADES = 100
 
-    def add_upgrade(self, name):
+    def add_upgrade(self, name, master):
         for upgrade in self.upgrades:
             if upgrade["name"] != name:
                 continue
@@ -481,7 +481,7 @@ class Shop:
                         self.point_manager.click_multiplier += upgrade["click_mult"]
                         return True
                     else:
-                        OutputManager.print_out("You already got the maximum amount of upgrades!")
+                        Popup(master, "You already got the maximum amount of upgrades!")
                         return False
             self.bought_upgrades.append([upgrade["name"], 1])
             self.point_manager.idle += upgrade["idle"]
@@ -495,18 +495,18 @@ class Shop:
                 return bought_upgrade[1]
         return 0
 
-    def shop_menu(self, name):
+    def shop_menu(self, name, master):
         upgrade_nr = 0
         for nr, upgrade in enumerate(self.upgrades):
             if upgrade['name'] == name:
                 upgrade_nr = nr
         cost = self.upgrades[upgrade_nr]["cost"] * self.rebirth_discount
         if self.point_manager.can_afford(cost=cost):
-            if self.add_upgrade(self.upgrades[upgrade_nr]["name"]):
+            if self.add_upgrade(self.upgrades[upgrade_nr]["name"], master):
                 self.upgrades[upgrade_nr]['cost'] = int(self.upgrades[upgrade_nr]['cost'] * 1.20)
                 self.point_manager.spend_points(cost=cost)
         else:
-            OutputManager.print_out("Not enough point to buy upgrade!")
+            Popup(master, "Not enough points to buy upgrade!")
 
 
 class Achievements:
@@ -788,9 +788,9 @@ if __name__ == "__main__":
 #  - [x] Show notifications and messages in GUI for events like achievements unlocked, errors, etc.
 #  - [x] Update upgrade costs dynamically in GUI after each purchase
 #  - [x] Add save and load buttons, call SavegameManager.save_game() and load_game()
+#  - [x] Add idle point timer updating PointManager.idle_point() periodically
 #  - [ ] Add CTkEntry input box with confirm button to replace input() for user choices
 #  - [ ] Add rebirth shop UI with bonus list and buttons to buy rebirth bonuses
-#  - [ ] Add idle point timer updating PointManager.idle_point() periodically
 #  - [ ] Implement rebirth reset logic and GUI refresh after rebirth()
 #  - [ ] Add progress bar showing progress to next rebirth
 #  - [ ] Design layout with frames/panels for points display, shop, rebirth, achievements, and logs
