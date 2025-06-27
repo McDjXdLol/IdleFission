@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import sys
 import time
 from functools import partial
@@ -110,6 +111,12 @@ class GUIManager:
         self.app = ctk.CTk()
         self.app.geometry(f"{self.WIDTH}x{self.HEIGHT}")
         self.app.title("Clickyker")
+
+        if hasattr(sys, '_MEIPASS'):
+            icon_path = os.path.join(sys._MEIPASS, "icon.ico")
+        else:
+            icon_path = "icon.ico"
+        self.app.iconbitmap(icon_path)
 
         # Window variables
         self.running = True
