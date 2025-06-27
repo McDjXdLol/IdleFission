@@ -1,11 +1,12 @@
 import datetime
 import json
 import sys
-from functools import partial
 import time
+from functools import partial
 
 import customtkinter as ctk
 from customtkinter import CTkLabel, CTkButton, CTkFrame, CTkSlider
+
 
 class ConfirmDialog(ctk.CTkToplevel):
     def __init__(self, master, message="Are you sure?"):
@@ -167,6 +168,12 @@ class GUIManager:
             frame.pack(fill="both", expand=True)
             frame.lift()
 
+    def savenexit(self):
+        SavegameManager(self.point_manager, self.shop, self.achievements, self.rebirth,
+                        self.point_manager.time_played).save_game(self.app)
+        time.sleep(1)
+        sys.exit()
+
     def build(self):
         # Main window
 
@@ -195,31 +202,36 @@ class GUIManager:
         achievements_show_button = self.add_button(right_buttons_frame, "Achievements",
                                                    func=lambda: self.toggle_frame(achievements_frame, main_window,
                                                                                   upgrade_menu), width=100, height=50)
+        show_rebirth_button = self.add_button(right_buttons_frame, "Rebirth",
+                                              func=lambda: self.toggle_frame(rebirth_frame, main_window, upgrade_menu),
+                                              width=100, height=50)
 
         save_game_button = self.add_button(right_buttons_frame, "Save",
                                            func=lambda: SavegameManager(self.point_manager, self.shop,
-                                                                        self.achievements, self.rebirth, self.point_manager.time_played).save_game(
+                                                                        self.achievements, self.rebirth,
+                                                                        self.point_manager.time_played).save_game(
                                                self.app),
                                            width=100, height=50)
 
         load_game_button = self.add_button(right_buttons_frame, "Load",
                                            func=lambda: SavegameManager(self.point_manager, self.shop,
-                                                                        self.achievements, self.rebirth, self.point_manager.time_played).load_game(
+                                                                        self.achievements, self.rebirth,
+                                                                        self.point_manager.time_played).load_game(
                                                self.app),
                                            width=100, height=50)
 
+        save_n_exit_button = self.add_button(right_buttons_frame, "Save & Exit", func=self.savenexit, width=100,
+                                             height=50)
+
         exit_button = self.add_button(right_buttons_frame, "Exit", func=sys.exit, width=100, height=50)
 
-        show_rebirth_button = self.add_button(right_buttons_frame, "Rebirths",
-                                              func=lambda: self.toggle_frame(rebirth_frame, main_window, upgrade_menu),
-                                              width=100, height=50)
-
-        exit_button.pack(side="bottom", pady=15)
-        load_game_button.pack(side="bottom", pady=5)
-        save_game_button.pack(side="bottom", pady=0)
-        show_rebirth_button.pack(side="bottom", pady=10)
-        achievements_show_button.pack(side="bottom", pady=10)
-        stats_show_button.pack(side="bottom", pady=10)
+        save_n_exit_button.pack(side="bottom", pady=(2, 0))
+        exit_button.pack(side="bottom", pady=(10, 2))
+        load_game_button.pack(side="bottom", pady=(2, 10))
+        save_game_button.pack(side="bottom", pady=(10, 2))
+        show_rebirth_button.pack(side="bottom", pady=(2, 10))
+        achievements_show_button.pack(side="bottom", pady=2)
+        stats_show_button.pack(side="bottom", pady=(0, 2))
 
         # Statistics
         stats_frame = self.add_Frame(self.app, 0, 0)
@@ -241,7 +253,7 @@ class GUIManager:
         achievements_frame.pack_forget()
 
         achievements_scrollable_frame = self.add_scrollableFrame(achievements_frame, width=600, height=600)
-        achievements_scrollable_frame.pack(fill="both", expand=False, pady=10)
+        achievements_scrollable_frame.pack(fill="both", expand=True, pady=10)
 
         # Elements
         achv_label = self.add_label(achievements_scrollable_frame, "ACHIEVEMENTS:", font_size=20)
@@ -254,7 +266,7 @@ class GUIManager:
             label = self.add_label_textvar(achievements_scrollable_frame,
                                            text_var=self.achievements_text_variables[nr],
                                            font_size=14)
-            label.pack()
+            label.pack(pady=10)
 
         # Przycisk Exit na samym dole
         exit_achv_button = self.add_button(achievements_scrollable_frame, "Exit",
@@ -341,6 +353,9 @@ class GUIManager:
         self.points_text_var.set(f"Points: {self.point_manager.points}")
         self.idle_text_var.set(f"Idle: {self.point_manager.idle}")
 
+        # DEBUG
+        self.point_manager.click()
+
         # Achievements
         for nr, i in enumerate(self.achievements.achievements):
             ach_data = self.achievements.get_ach_data(i['id'])
@@ -368,7 +383,8 @@ class GUIManager:
 
         # Statistics
         self.statistics_text_var.set(
-            StatsManager.show_stats(self.point_manager, self.shop, self.achievements, self.rebirth, self.point_manager.time_played))
+            StatsManager.show_stats(self.point_manager, self.shop, self.achievements, self.rebirth,
+                                    self.point_manager.time_played))
         self.app.after(100, self.update_text_var)
 
 
@@ -487,9 +503,11 @@ class StatsManager:
                         total_achievements_reward_granted += z["reward"]
         output_text = f"""
 STATS:
+
+
 CLICKER STATS:
 Current Points: {point_manager.points}
-Most Points: {point_manager.total_points}
+Total Points: {point_manager.total_points}
 Total Clicks: {point_manager.total_clicks}
 Click Multiplier: {point_manager.click_multiplier}
 Idle: {point_manager.idle}
@@ -509,7 +527,7 @@ Rebirth Points: {rebirth.rebirths_points}
 Points needed for next rebirth: {rebirth.rebirth_condition}
 Starting points: {rebirth.rebirth_starting_points}
 Idle bonus: {point_manager.rebirth_idle * 100}%
-Click Multiplier: {point_manager.rebirth_click_multiplier * 100}%
+Click Multiplier: {int(point_manager.rebirth_click_multiplier * 100)}%
 """
         return output_text
 
@@ -526,7 +544,7 @@ class PointManager:
         self.time_played = 0
 
     def click(self):
-        self.total_points = int(1 * self.click_multiplier * self.rebirth_click_multiplier)
+        self.total_points += int(1 * self.click_multiplier * self.rebirth_click_multiplier)
         self.points += int(1 * self.click_multiplier * self.rebirth_click_multiplier)
         self.total_clicks += 1
 
@@ -547,32 +565,35 @@ class Shop:
         :type point_manager: PointManager
         """
         self.upgrades = [
-            {"name": "Tiny Reactor Boost", "cost": 5, "click_mult": 1, "idle": 0},
-            {"name": "Small Capacitor", "cost": 15, "click_mult": 2, "idle": 0},
-            {"name": "Heat Sink", "cost": 30, "click_mult": 0, "idle": 3},
-            {"name": "Power Amplifier", "cost": 50, "click_mult": 3, "idle": 0},
-            {"name": "Quantum Flux", "cost": 80, "click_mult": 0, "idle": 5},
-            {"name": "Nano Circuit", "cost": 120, "click_mult": 4, "idle": 0},
-            {"name": "Superconductor", "cost": 170, "click_mult": 0, "idle": 10},
-            {"name": "Particle Accelerator", "cost": 230, "click_mult": 5, "idle": 0},
-            {"name": "Dark Matter Collector", "cost": 300, "click_mult": 0, "idle": 20},
-            {"name": "Plasma Converter", "cost": 380, "click_mult": 6, "idle": 0},
-            {"name": "Fusion Core", "cost": 470, "click_mult": 0, "idle": 25},
-            {"name": "Antimatter Storage", "cost": 570, "click_mult": 8, "idle": 0},
-            {"name": "Graviton Emitter", "cost": 680, "click_mult": 0, "idle": 40},
-            {"name": "Chrono Stabilizer", "cost": 800, "click_mult": 10, "idle": 0},
-            {"name": "Dimensional Rift", "cost": 930, "click_mult": 0, "idle": 60},
-            {"name": "Energy Matrix", "cost": 1070, "click_mult": 12, "idle": 0},
-            {"name": "Singularity Reactor", "cost": 1220, "click_mult": 0, "idle": 80},
-            {"name": "Neutrino Collector", "cost": 1380, "click_mult": 15, "idle": 0},
-            {"name": "Omega Core", "cost": 1550, "click_mult": 0, "idle": 100},
-            {"name": "Eternity Engine", "cost": 1730, "click_mult": 20, "idle": 0},
+            {"name": "Tiny Reactor Boost", "cost": 10, "click_mult": 1, "idle": 0},
+            {"name": "Small Capacitor", "cost": 25, "click_mult": 2, "idle": 0},
+            {"name": "Heat Sink", "cost": 50, "click_mult": 0, "idle": 3},
+            {"name": "Power Amplifier", "cost": 85, "click_mult": 3, "idle": 0},
+            {"name": "Quantum Flux", "cost": 140, "click_mult": 0, "idle": 5},
+            {"name": "Nano Circuit", "cost": 220, "click_mult": 4, "idle": 0},
+            {"name": "Superconductor", "cost": 350, "click_mult": 0, "idle": 10},
+
+            {"name": "Particle Accelerator", "cost": 600, "click_mult": 5, "idle": 0},
+            {"name": "Dark Matter Collector", "cost": 1000, "click_mult": 0, "idle": 20},
+            {"name": "Plasma Converter", "cost": 1700, "click_mult": 6, "idle": 0},
+            {"name": "Fusion Core", "cost": 3000, "click_mult": 0, "idle": 25},
+            {"name": "Antimatter Storage", "cost": 5000, "click_mult": 8, "idle": 0},
+            {"name": "Graviton Emitter", "cost": 8500, "click_mult": 0, "idle": 40},
+            {"name": "Chrono Stabilizer", "cost": 14000, "click_mult": 10, "idle": 0},
+
+            {"name": "Dimensional Rift", "cost": 25000, "click_mult": 0, "idle": 60},
+            {"name": "Energy Matrix", "cost": 50000, "click_mult": 12, "idle": 0},
+            {"name": "Singularity Reactor", "cost": 100000, "click_mult": 0, "idle": 80},
+            {"name": "Neutrino Collector", "cost": 250000, "click_mult": 15, "idle": 0},
+            {"name": "Omega Core", "cost": 600000, "click_mult": 0, "idle": 100},
+            {"name": "Eternity Engine", "cost": 1250000, "click_mult": 20, "idle": 0},
         ]
+
         for nr, upgrade in enumerate(self.upgrades):
-            if nr >= int(len(self.upgrades)/2):
+            if nr >= int(len(self.upgrades) / 2):
                 upgrade['cost'] = int(upgrade['cost'] * 7)
                 upgrade['idle'] = int(upgrade['idle'] * 9)
-            elif nr >= int(len(self.upgrades)/3):
+            elif nr >= int(len(self.upgrades) / 3):
                 upgrade['cost'] = int(upgrade['cost'] * 5)
                 upgrade['idle'] = int(upgrade['idle'] * 7)
             else:
@@ -908,17 +929,17 @@ class Rebirth:
         if self.rebirths_points > 0:
             match self.rebirth_bonuses[bonus_nr]["type"]:
                 case "click":
-                    self.point_manager.rebirth_click_multiplier += self.rebirth_bonuses[bonus_nr]["amount"]
+                    self.point_manager.rebirth_click_multiplier += int(self.rebirth_bonuses[bonus_nr]["amount"])
                     Popup(master,
                           f"Click multiplier increased to: {self.point_manager.rebirth_click_multiplier}")
                 case "idle":
-                    self.point_manager.rebirth_idle += self.rebirth_bonuses[bonus_nr]['amount']
+                    self.point_manager.rebirth_idle += int(self.rebirth_bonuses[bonus_nr]['amount'])
                     Popup(master, f"Idle multiplier increased to: {self.point_manager.rebirth_idle}")
                 case "cost":
                     self.shop.rebirth_discount -= self.rebirth_bonuses[bonus_nr]['amount']
-                    Popup(master, f"Upgrades are discounted to: {self.shop.rebirth_discount}%")
+                    Popup(master, f"Upgrades are discounted to: {int(self.shop.rebirth_discount*100)}%")
                 case "starting_points":
-                    self.rebirth_starting_points += self.rebirth_bonuses[bonus_nr]['amount']
+                    self.rebirth_starting_points += int(self.rebirth_bonuses[bonus_nr]['amount'])
                     Popup(master, f"Starting points increased to: {self.rebirth_starting_points}")
             self.rebirths_points -= 1
         else:
@@ -938,27 +959,39 @@ class Rebirth:
             self.rebirths_points += 1
             self.rebirth_condition = int(self.rebirth_condition * self.rebirth_multiplier)
             self.shop.upgrades = [
-                {"name": "Tiny Reactor Boost", "cost": 5, "click_mult": 1, "idle": 0},
-                {"name": "Small Capacitor", "cost": 15, "click_mult": 2, "idle": 0},
-                {"name": "Heat Sink", "cost": 30, "click_mult": 0, "idle": 1},
-                {"name": "Power Amplifier", "cost": 50, "click_mult": 3, "idle": 0},
-                {"name": "Quantum Flux", "cost": 80, "click_mult": 0, "idle": 3},
-                {"name": "Nano Circuit", "cost": 120, "click_mult": 4, "idle": 0},
-                {"name": "Superconductor", "cost": 170, "click_mult": 0, "idle": 5},
-                {"name": "Particle Accelerator", "cost": 230, "click_mult": 5, "idle": 0},
-                {"name": "Dark Matter Collector", "cost": 300, "click_mult": 0, "idle": 10},
-                {"name": "Plasma Converter", "cost": 380, "click_mult": 6, "idle": 0},
-                {"name": "Fusion Core", "cost": 470, "click_mult": 0, "idle": 15},
-                {"name": "Antimatter Storage", "cost": 570, "click_mult": 8, "idle": 0},
-                {"name": "Graviton Emitter", "cost": 680, "click_mult": 0, "idle": 20},
-                {"name": "Chrono Stabilizer", "cost": 800, "click_mult": 10, "idle": 0},
-                {"name": "Dimensional Rift", "cost": 930, "click_mult": 0, "idle": 30},
-                {"name": "Energy Matrix", "cost": 1070, "click_mult": 12, "idle": 0},
-                {"name": "Singularity Reactor", "cost": 1220, "click_mult": 0, "idle": 40},
-                {"name": "Neutrino Collector", "cost": 1380, "click_mult": 15, "idle": 0},
-                {"name": "Omega Core", "cost": 1550, "click_mult": 0, "idle": 50},
-                {"name": "Eternity Engine", "cost": 1730, "click_mult": 20, "idle": 0},
+                {"name": "Tiny Reactor Boost", "cost": 10, "click_mult": 1, "idle": 0},
+                {"name": "Small Capacitor", "cost": 25, "click_mult": 2, "idle": 0},
+                {"name": "Heat Sink", "cost": 50, "click_mult": 0, "idle": 3},
+                {"name": "Power Amplifier", "cost": 85, "click_mult": 3, "idle": 0},
+                {"name": "Quantum Flux", "cost": 140, "click_mult": 0, "idle": 5},
+                {"name": "Nano Circuit", "cost": 220, "click_mult": 4, "idle": 0},
+                {"name": "Superconductor", "cost": 350, "click_mult": 0, "idle": 10},
+
+                {"name": "Particle Accelerator", "cost": 600, "click_mult": 5, "idle": 0},
+                {"name": "Dark Matter Collector", "cost": 1000, "click_mult": 0, "idle": 20},
+                {"name": "Plasma Converter", "cost": 1700, "click_mult": 6, "idle": 0},
+                {"name": "Fusion Core", "cost": 3000, "click_mult": 0, "idle": 25},
+                {"name": "Antimatter Storage", "cost": 5000, "click_mult": 8, "idle": 0},
+                {"name": "Graviton Emitter", "cost": 8500, "click_mult": 0, "idle": 40},
+                {"name": "Chrono Stabilizer", "cost": 14000, "click_mult": 10, "idle": 0},
+
+                {"name": "Dimensional Rift", "cost": 25000, "click_mult": 0, "idle": 60},
+                {"name": "Energy Matrix", "cost": 50000, "click_mult": 12, "idle": 0},
+                {"name": "Singularity Reactor", "cost": 100000, "click_mult": 0, "idle": 80},
+                {"name": "Neutrino Collector", "cost": 250000, "click_mult": 15, "idle": 0},
+                {"name": "Omega Core", "cost": 600000, "click_mult": 0, "idle": 100},
+                {"name": "Eternity Engine", "cost": 1250000, "click_mult": 20, "idle": 0},
             ]
+            for nr, upgrade in enumerate(self.shop.upgrades):
+                if nr >= int(len(self.shop.upgrades) / 2):
+                    upgrade['cost'] = int(upgrade['cost'] * 7)
+                    upgrade['idle'] = int(upgrade['idle'] * 9)
+                elif nr >= int(len(self.shop.upgrades) / 3):
+                    upgrade['cost'] = int(upgrade['cost'] * 5)
+                    upgrade['idle'] = int(upgrade['idle'] * 7)
+                else:
+                    upgrade['cost'] = int(upgrade['cost'] * 3)
+                    upgrade['idle'] = int(upgrade['idle'] * 5)
         else:
             Popup(master, "You don't have enough points to rebirth!")
 
@@ -975,17 +1008,3 @@ if __name__ == "__main__":
     app = GUI.app
     GUI.build()
     GUI.run()
-
-# TODO:
-#  - [-] Add export/import save via encoded string
-#  - [x] Add function that checks if achievement is able to unlock
-#  - [x] Add function that gives reward for achievement
-#  - [x] Add function that spits out information about unlocked achievement
-#  - [x] Add maximum number of upgrades
-#  - [x] Add rebirths that gives rebirths point
-#  - [x] Add rebirth shop with massive bonuses
-#  - [x] Add function/class that is used to show current statistics
-#  - [x] Add class that is used to save n' load game
-#  - [x] Add main function / main game loop
-#  - [x] Add time in game stat
-#  - [ ] Balance game
