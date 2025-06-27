@@ -2,11 +2,10 @@ import datetime
 import json
 import sys
 from functools import partial
+import time
 
 import customtkinter as ctk
 from customtkinter import CTkLabel, CTkButton, CTkFrame, CTkSlider
-
-
 
 class ConfirmDialog(ctk.CTkToplevel):
     def __init__(self, master, message="Are you sure?"):
@@ -50,7 +49,6 @@ class ConfirmDialog(ctk.CTkToplevel):
     def no(self):
         self.result = False
         self.destroy()
-
 
 
 class Popup(ctk.CTkToplevel):
@@ -200,13 +198,13 @@ class GUIManager:
 
         save_game_button = self.add_button(right_buttons_frame, "Save",
                                            func=lambda: SavegameManager(self.point_manager, self.shop,
-                                                                        self.achievements, self.rebirth).save_game(
+                                                                        self.achievements, self.rebirth, self.point_manager.time_played).save_game(
                                                self.app),
                                            width=100, height=50)
 
         load_game_button = self.add_button(right_buttons_frame, "Load",
                                            func=lambda: SavegameManager(self.point_manager, self.shop,
-                                                                        self.achievements, self.rebirth).load_game(
+                                                                        self.achievements, self.rebirth, self.point_manager.time_played).load_game(
                                                self.app),
                                            width=100, height=50)
 
@@ -272,8 +270,6 @@ class GUIManager:
         rebirth_points_label = self.add_label_textvar(rebirth_frame, text_var=self.rebirth_points_var, font_size=20)
         rebirth_points_label.pack(side="top")
 
-
-
         rebirth_exit_button = self.add_button(rebirth_frame, "Exit",
                                               func=lambda: self.toggle_frame(rebirth_frame, main_window,
                                                                              upgrade_menu), width=100, height=50)
@@ -327,7 +323,6 @@ class GUIManager:
         else:
             self.rebirth.rebirth(self.app)
 
-
     def run(self):
         self.update_text_var()
         self.idle_timer()
@@ -336,6 +331,7 @@ class GUIManager:
     def idle_timer(self):
         self.point_manager.idle_point()
         self.achievements.check_ach(self.app)
+        self.point_manager.time_played += 1
         self.app.after(1000, self.idle_timer)
 
     def update_text_var(self):
@@ -355,7 +351,7 @@ class GUIManager:
         for nr, i in enumerate(self.shop.upgrades):
             if i['idle'] == 0:
                 self.upgrades_text_variables[nr][0].set(
-                    f"{i['name']}\nCost: {i['cost']}\nClick Multiplier: {i['click_mult']}\nCount: {self.shop.count_upgrades(i['name'])}")
+                    f"{i['name']}\nCost: {int(i["cost"] * self.shop.rebirth_discount)}\nClick Multiplier: {i['click_mult']}\nCount: {self.shop.count_upgrades(i['name'])}")
             else:
                 self.upgrades_text_variables[nr][0].set(
                     f"{i['name']}\nCost: {i['cost']}\nIdle: {i['idle']}\nCount: {self.shop.count_upgrades(i['name'])}")
@@ -369,13 +365,13 @@ class GUIManager:
 
         # Statistics
         self.statistics_text_var.set(
-            StatsManager.show_stats(self.point_manager, self.shop, self.achievements, self.rebirth))
+            StatsManager.show_stats(self.point_manager, self.shop, self.achievements, self.rebirth, self.point_manager.time_played))
         self.app.after(100, self.update_text_var)
 
 
 class SavegameManager:
 
-    def __init__(self, points_manager, shop, achievements, rebirth):
+    def __init__(self, points_manager, shop, achievements, rebirth, time_played):
         """
         :type points_manager: PointManager
         :type shop: Shop
@@ -386,6 +382,7 @@ class SavegameManager:
         :param achievements: Object with Achievements Class
         :param rebirth: Object with Rebirth Class
         """
+        self.time_played = time_played
         self.points_manager = points_manager
         self.shop = shop
         self.achievements = achievements
@@ -403,6 +400,7 @@ class SavegameManager:
             "points": self.points_manager.points,
             "idle": self.points_manager.idle,
             "click_multiplier": self.points_manager.click_multiplier,
+            "time_played": self.time_played,
 
             # Shop
             "upgrades": self.shop.upgrades,
@@ -438,6 +436,7 @@ class SavegameManager:
         self.points_manager.points = save_data["points"]
         self.points_manager.idle = save_data["idle"]
         self.points_manager.click_multiplier = save_data["click_multiplier"]
+        self.points_manager.time_played = save_data["time_played"]
 
         # Shop
         self.shop.upgrades = save_data["upgrades"]
@@ -460,7 +459,7 @@ class SavegameManager:
 class StatsManager:
 
     @staticmethod
-    def show_stats(point_manager, shop, achievements, rebirth):
+    def show_stats(point_manager, shop, achievements, rebirth, time_played):
         """
         :type point_manager: PointManager
         :type shop: Shop
@@ -491,6 +490,7 @@ Most Points: {point_manager.total_points}
 Total Clicks: {point_manager.total_clicks}
 Click Multiplier: {point_manager.click_multiplier}
 Idle: {point_manager.idle}
+Time played: {time.strftime("%H:%M:%S", time.gmtime(time_played))}
  
 SHOP STATS:
 Number of upgrades bought: {total_upgrades_bought}
@@ -520,6 +520,7 @@ class PointManager:
         self.points = 0
         self.idle = 0
         self.click_multiplier = 1
+        self.time_played = 0
 
     def click(self):
         self.total_points = int(1 * self.click_multiplier * self.rebirth_click_multiplier)
@@ -600,7 +601,7 @@ class Shop:
         for nr, upgrade in enumerate(self.upgrades):
             if upgrade['name'] == name:
                 upgrade_nr = nr
-        cost = self.upgrades[upgrade_nr]["cost"] * self.rebirth_discount
+        cost = int(self.upgrades[upgrade_nr]["cost"] * self.rebirth_discount)
         if self.point_manager.can_afford(cost=cost):
             if self.add_upgrade(self.upgrades[upgrade_nr]["name"], master):
                 self.upgrades[upgrade_nr]['cost'] = int(self.upgrades[upgrade_nr]['cost'] * 1.20)
@@ -793,12 +794,12 @@ class Rebirth:
                 case "click":
                     self.point_manager.rebirth_click_multiplier += self.rebirth_bonuses[bonus_nr]["amount"]
                     Popup(master,
-                        f"Click multiplier increased to: {self.point_manager.rebirth_click_multiplier}")
+                          f"Click multiplier increased to: {self.point_manager.rebirth_click_multiplier}")
                 case "idle":
                     self.point_manager.rebirth_idle += self.rebirth_bonuses[bonus_nr]['amount']
                     Popup(master, f"Idle multiplier increased to: {self.point_manager.rebirth_idle}")
                 case "cost":
-                    self.shop.rebirth_discount += self.rebirth_bonuses[bonus_nr]['amount']
+                    self.shop.rebirth_discount -= self.rebirth_bonuses[bonus_nr]['amount']
                     Popup(master, f"Upgrades are discounted to: {self.shop.rebirth_discount}%")
                 case "starting_points":
                     self.rebirth_starting_points += self.rebirth_bonuses[bonus_nr]['amount']
@@ -848,6 +849,7 @@ class Rebirth:
     def get_rebirth_done_perc(self):
         return int((self.point_manager.points / self.rebirth_condition) * 100)
 
+
 if __name__ == "__main__":
     pt_manager = PointManager()
     shop = Shop(pt_manager)
@@ -859,6 +861,7 @@ if __name__ == "__main__":
     GUI.run()
 
 # TODO:
+#  - [-] Add export/import save via encoded string
 #  - [x] Add function that checks if achievement is able to unlock
 #  - [x] Add function that gives reward for achievement
 #  - [x] Add function that spits out information about unlocked achievement
@@ -868,25 +871,5 @@ if __name__ == "__main__":
 #  - [x] Add function/class that is used to show current statistics
 #  - [x] Add class that is used to save n' load game
 #  - [x] Add main function / main game loop
-#  - [ ] Add time in game stat
-#  - [ ] Add "turbo" boosts that are expensive but useful
-#  - [ ] Add challenge mode (e.g. only idle, or no shop)
-#  - [ ] Add export/import save via encoded string
-
-# TODO GUI:
-#  - [-] Create output log widget (e.g. CTkTextbox) to replace console print outputs
-#  - [x] Add main game loop function (update GUI elements and game state)
-#  - [x] Add CTkLabel to display current points, total points, click multiplier, idle, rebirth points
-#  - [x] Add CTkButton for clicking action, calling PointManager.click()
-#  - [x] Add upgrade shop UI: list upgrades with costs and bought amounts, buttons to buy upgrades
-#  - [x] Implement achievements check and display unlocked achievements in
-#  - [x] Display stats in GUI using StatsManager.show_stats() output
-#  - [x] Show notifications and messages in GUI for events like achievements unlocked, errors, etc.
-#  - [x] Update upgrade costs dynamically in GUI after each purchase
-#  - [x] Add save and load buttons, call SavegameManager.save_game() and load_game()
-#  - [x] Add idle point timer updating PointManager.idle_point() periodically
-#  - [x] Add rebirth shop UI with bonus list and buttons to buy rebirth bonuses
-#  - [x] Implement rebirth reset logic and GUI refresh after rebirth()
-#  - [x] Add progress bar showing progress to next rebirth
-#  - [x] Add CTkEntry input box with confirm button to replace input() for user choices
-#  - [x] Design layout with frames/panels for points display, shop, rebirth, achievements, and logs
+#  - [x] Add time in game stat
+#  - [ ] Balance game
