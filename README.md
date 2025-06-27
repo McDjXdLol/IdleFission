@@ -11,9 +11,15 @@
 - 💾 **Save/Load** – keep your progress safe
 - 📊 **Stats overview** – track your progress and domination
 
-## 🧪 Gameplay
+## 🚀 Latest Release
 
-Start by clicking to earn points. Use those points to buy upgrades that increase your clicking power and idle income. As you grow stronger, you'll unlock achievements that give bonus points. Once you've earned enough, perform a **rebirth** to reset and gain **rebirth points**, which can be spent on powerful passive bonuses. Each rebirth raises the stakes and unlocks even greater potential.
+Check out the newest stable release:
+
+- Version: `v1.0.0`
+- Date: 2025-06-27
+- Download: [IdleFission v1.0.0 release](https://github.com/McDjXdLol/IdleFission/releases/tag/v1.0.0)
+
+> 📝 **Note:** The release contains a pre-built executable (`idle_fission.exe`) for Windows. No Python installation required to run this version.
 
 ## 🛠️ Requirements
 
@@ -23,10 +29,16 @@ Start by clicking to earn points. Use those points to buy upgrades that increase
 
 ## 🚀 How to Run
 
+### From source code
+
 ```bash
 pip install customtkinter
 python main.py
 ```
+
+### Using the pre-built release executable
+Just download the `idle_fission.exe` from the release page and run it directly on Windows. No installation or Python required.
+
 ## 💾 Save System
 Game progress is saved to a JSON file (`save.json`). You can save or load the game manually from the GUI interface.
 
@@ -36,5 +48,6 @@ _coming soon... maybe 😎_
 ## 📄 License
 MIT [License](LICENSE) – do whatever you want, just don’t sell it and call it your own.
 
---- 
+---
+
 Have fun clicking your way into a singularity 🔥
