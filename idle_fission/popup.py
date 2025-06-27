@@ -2,6 +2,20 @@ import customtkinter as ctk
 
 class Popup(ctk.CTkToplevel):
     def __init__(self, master, message):
+        """
+        Initialize a popup window displaying a temporary message.
+
+        The popup is positioned centered horizontally over the master window,
+        slightly below its top edge, stays on top without window decorations,
+        and automatically fades out after 3 seconds.
+
+        Parameters
+        ----------
+        master : ctk.CTk
+            The parent window over which the popup will appear.
+        message : str
+            The message to display inside the popup.
+        """
         super().__init__(master)
 
         # Stick popup to window
@@ -29,4 +43,9 @@ class Popup(ctk.CTkToplevel):
         self.after(3000, self.fade_out)
 
     def fade_out(self):
+        """
+        Destroy the popup window to remove it from the screen.
+
+        Called automatically 3 seconds after initialization.
+        """
         self.destroy()

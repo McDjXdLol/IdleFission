@@ -3,11 +3,11 @@ class ConfirmDialog(ctk.CTkToplevel):
     def __init__(self, master, message="Are you sure?"):
         super().__init__(master)
 
-        self.result = None  # Tutaj będzie True/False
+        self.result = None
         self.title("Confirmation")
 
         self.geometry("400x150")
-        self.grab_set()  # Zablokuj inne okna, dopóki to nie zostanie zamknięte
+        self.grab_set()
         self.focus_force()
         self.resizable(False, False)
 
@@ -32,7 +32,7 @@ class ConfirmDialog(ctk.CTkToplevel):
         yes_btn.pack(side="left", padx=10)
         no_btn.pack(side="left", padx=10)
 
-        self.protocol("WM_DELETE_WINDOW", self.no)  # Zamknięcie = No
+        self.protocol("WM_DELETE_WINDOW", self.no)
 
     def yes(self):
         self.result = True

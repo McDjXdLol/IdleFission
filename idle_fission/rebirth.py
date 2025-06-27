@@ -1,13 +1,16 @@
 from popup import Popup
 
-
 class Rebirth:
     def __init__(self, point_manager, shop):
         """
-        :type shop: Shop
-        :param shop: Object wth Shop Class
-        :type point_manager: PointManager
-        :param point_manager: Object with PointManager Class
+        Initialize the Rebirth system managing rebirth mechanics and bonuses.
+
+        Parameters
+        ----------
+        point_manager : PointManager
+            Instance managing points and multipliers.
+        shop : Shop
+            Instance managing the shop and upgrades.
         """
         self.shop = shop
         self.point_manager = point_manager
@@ -45,12 +48,36 @@ class Rebirth:
         ]
 
     def get_bonuses_list(self):
+        """
+        Get a list of all rebirth bonus names.
+
+        Returns
+        -------
+        list of str
+            List containing the names of all rebirth bonuses.
+        """
         output = []
         for nr, upgrade in enumerate(self.rebirth_bonuses):
             output.append(upgrade['name'])
         return output
 
     def buy_rebirth_bonus(self, name, master):
+        """
+        Attempt to purchase a rebirth bonus if enough rebirth points are available.
+
+        Parameters
+        ----------
+        name : str
+            The name of the rebirth bonus to buy.
+        master : tkinter widget
+            The parent window for the Popup message.
+
+        Side Effects
+        ------------
+        Updates relevant multipliers or values based on the purchased bonus,
+        decreases rebirth points by one, and shows a Popup notification.
+        Shows a Popup if not enough rebirth points are available.
+        """
         bonus_nr = 0
         for nr, x in enumerate(self.rebirth_bonuses):
             if x['name'] == name:
@@ -76,9 +103,29 @@ class Rebirth:
             Popup(master=master, message="Not enough rebirth points to buy!")
 
     def can_rebirth(self):
+        """
+        Check if the player meets the conditions to perform a rebirth.
+
+        Returns
+        -------
+        bool
+            True if current points are greater or equal to rebirth condition, False otherwise.
+        """
         return self.point_manager.points >= self.rebirth_condition
 
     def rebirth(self, master):
+        """
+        Perform the rebirth process if conditions are met.
+
+        Resets points, idle and click multipliers, upgrades, increments rebirth counters,
+        adjusts rebirth condition threshold and upgrades costs/idle values,
+        and shows a Popup if rebirth cannot be performed.
+
+        Parameters
+        ----------
+        master : tkinter widget
+            The parent window for the Popup message.
+        """
         if self.can_rebirth():
             self.points_record = max(self.points_record, self.point_manager.points)
             self.point_manager.points = self.rebirth_starting_points
@@ -126,4 +173,12 @@ class Rebirth:
             Popup(master, "You don't have enough points to rebirth!")
 
     def get_rebirth_done_perc(self):
+        """
+        Calculate the percentage progress towards the next rebirth.
+
+        Returns
+        -------
+        int
+            Percentage (0-100) representing how close the player is to rebirthing.
+        """
         return int((self.point_manager.points / self.rebirth_condition) * 100)

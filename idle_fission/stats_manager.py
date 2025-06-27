@@ -6,30 +6,41 @@ class StatsManager:
     @staticmethod
     def show_stats(point_manager, shop, achievements, rebirth, time_played):
         """
-        :type point_manager: PointManager
-        :type shop: Shop
-        :type achievements: Achievements
-        :type rebirth: Rebirth
-        :param point_manager: Object with PointManager Class
-        :param shop: Object with Shop Class
-        :param achievements: Object with Achievements Class
-        :param rebirth: Object with Rebirth Class
-        :return:
+        Generate a formatted string summary of game stats.
+
+        Parameters
+        ----------
+        point_manager : PointManager
+            Instance managing points and multipliers.
+        shop : Shop
+            Instance managing upgrades and shop state.
+        achievements : Achievements
+            Instance managing achievements and their status.
+        rebirth : Rebirth
+            Instance managing rebirth mechanics and bonuses.
+        time_played : float
+            Total time played in seconds.
+
+        Returns
+        -------
+        str
+            Formatted multi-line string containing stats summary.
         """
         total_upgrades_bought = 0
         for x in shop.bought_upgrades:
             total_upgrades_bought += x[1]
+
         total_achievements_got = 0
         total_achievements_reward_granted = 0
-        for y in achievements.conditions:
-            if y["unlocked"]:
+        for cond in achievements.conditions:
+            if cond["unlocked"]:
                 total_achievements_got += 1
-                for z in achievements.achievements:
-                    if z["condition_id"] == y["title"]:
-                        total_achievements_reward_granted += z["reward"]
+                for ach in achievements.achievements:
+                    if ach["condition_id"] == cond["title"]:
+                        total_achievements_reward_granted += ach["reward"]
+
         output_text = f"""
 STATS:
-
 
 CLICKER STATS:
 Current Points: {point_manager.points}

@@ -5,17 +5,22 @@ from popup import Popup
 
 
 class SavegameManager:
-
     def __init__(self, points_manager, shop, achievements, rebirth, time_played):
         """
-        :type points_manager: PointManager
-        :type shop: Shop
-        :type achievements: Achievements
-        :type rebirth: Rebirth
-        :param points_manager: Object with PointsManager Class
-        :param shop: Object with Shop Class
-        :param achievements: Object with Achievements Class
-        :param rebirth: Object with Rebirth Class
+        Savegame manager for saving and loading game state to/from a JSON file.
+
+        Parameters
+        ----------
+        points_manager : PointManager
+            Instance managing player's points and multipliers.
+        shop : Shop
+            Instance managing upgrades and shop state.
+        achievements : Achievements
+            Instance managing player's achievements.
+        rebirth : Rebirth
+            Instance managing rebirth mechanics.
+        time_played : int
+            Total time played in seconds.
         """
         self.time_played = time_played
         self.points_manager = points_manager
@@ -25,6 +30,14 @@ class SavegameManager:
         self.save_filename = "save.json"
 
     def save_game(self, master):
+        """
+        Saves current game state to a JSON file.
+
+        Parameters
+        ----------
+        master : tkinter widget
+            Parent widget to display popup confirmation.
+        """
         current_time = datetime.datetime.now()
         data = {
             # PointManager
@@ -59,7 +72,14 @@ class SavegameManager:
         Popup(master, "Game saved!")
 
     def load_game(self, master):
-        save_data = {}
+        """
+        Loads game state from a JSON file and updates game objects.
+
+        Parameters
+        ----------
+        master : tkinter widget
+            Parent widget to display popup confirmation.
+        """
         with open(self.save_filename, "r") as f:
             save_data = json.load(f)
 

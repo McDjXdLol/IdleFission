@@ -4,12 +4,16 @@ from popup import Popup
 class Achievements:
     def __init__(self, point_manager, shop, rebirth):
         """
-        :type rebirth: Rebirth
-        :param rebirth: Object with Rebirth Class
-        :type point_manager PointManager
-        :param point_manager: Object with PointManager Class
-        :type shop: Shop
-        :param shop: Object with Shop Class
+        Initialize Achievements manager with dependencies and achievement/condition data.
+
+        Parameters
+        ----------
+        point_manager : PointManager
+            Instance managing points and clicks.
+        shop : Shop
+            Instance managing upgrades and purchases.
+        rebirth : Rebirth
+            Instance managing rebirth mechanics.
         """
         self.point_manager = point_manager
         self.shop = shop
@@ -151,17 +155,21 @@ class Achievements:
 
     def unlock_ach(self, master, title):
         """
-        Function that sets achievement as unlocked and gives reward to player
-        :param title:
-        :return:
+        Unlock the achievement by title and give the reward to the player.
+
+        Parameters
+        ----------
+        master : Tk widget
+            The parent window or widget to attach the popup.
+        title : str
+            The condition title/id to unlock.
         """
         unlocked = False
         for condition in self.conditions:
-            if not condition["unlocked"]:
-                if condition["title"] == title:
-                    condition["unlocked"] = True
-                    unlocked = True
-                    break
+            if not condition["unlocked"] and condition["title"] == title:
+                condition["unlocked"] = True
+                unlocked = True
+                break
         if unlocked:
             for ach in self.achievements:
                 if ach["condition_id"] == title:
@@ -172,11 +180,20 @@ class Achievements:
 
     def get_ach_data(self, title):
         """
-        Function that returns [Achievement name, description, reward, unlocked]
-        :param title: title/id of the achievement
-        :return:
+        Retrieve achievement data by its title.
+
+        Parameters
+        ----------
+        title : str
+            The achievement id.
+
+        Returns
+        -------
+        list or None
+            List containing [name, description, reward, unlocked status] if found,
+            otherwise None.
         """
-        for ach in self.achievements:  # ← poprawione
+        for ach in self.achievements:
             if ach["id"] == title:
                 for con in self.conditions:
                     if ach["condition_id"] == con["title"]:
@@ -185,8 +202,17 @@ class Achievements:
 
     def check_ach(self, master):
         """
-        Returns [Achievement unlocked, Achievement title/id]
-        :return:
+        Check all achievement conditions and unlock those that meet criteria.
+
+        Parameters
+        ----------
+        master : Tk widget
+            The parent window or widget to attach popups.
+
+        Returns
+        -------
+        bool or None
+            True if any achievement was unlocked this check, otherwise None.
         """
         for condition in self.conditions:
             if not condition["unlocked"]:

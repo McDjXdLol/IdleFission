@@ -4,8 +4,12 @@ from popup import Popup
 class Shop:
     def __init__(self, point_manager):
         """
-        :param point_manager: PointManager
-        :type point_manager: PointManager
+        Manage shop upgrades, buying, and upgrade costs.
+
+        Parameters
+        ----------
+        point_manager : PointManager
+            Instance managing player points and multipliers.
         """
         self.upgrades = [
             {"name": "Tiny Reactor Boost", "cost": 10, "click_mult": 1, "idle": 0},
@@ -49,6 +53,21 @@ class Shop:
         self.MAX_UPGRADES = 100
 
     def add_upgrade(self, name, master):
+        """
+        Attempt to add an upgrade to the player's inventory.
+
+        Parameters
+        ----------
+        name : str
+            Name of the upgrade to add.
+        master : tkinter widget
+            Parent widget to display popup messages.
+
+        Returns
+        -------
+        bool
+            True if upgrade was successfully added, False otherwise.
+        """
         for upgrade in self.upgrades:
             if upgrade["name"] != name:
                 continue
@@ -69,12 +88,35 @@ class Shop:
         return False
 
     def count_upgrades(self, name):
+        """
+        Count how many times a specific upgrade was bought.
+
+        Parameters
+        ----------
+        name : str
+            Name of the upgrade to count.
+
+        Returns
+        -------
+        int
+            Number of times the upgrade was purchased.
+        """
         for bought_upgrade in self.bought_upgrades:
             if name in bought_upgrade:
                 return bought_upgrade[1]
         return 0
 
     def shop_menu(self, name, master):
+        """
+        Handle the buying process of an upgrade if the player can afford it.
+
+        Parameters
+        ----------
+        name : str
+            Name of the upgrade to purchase.
+        master : tkinter widget
+            Parent widget to display popup messages.
+        """
         upgrade_nr = 0
         for nr, upgrade in enumerate(self.upgrades):
             if upgrade['name'] == name:
