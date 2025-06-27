@@ -4,7 +4,53 @@ import sys
 from functools import partial
 
 import customtkinter as ctk
-from customtkinter import CTkLabel, CTkButton, CTkFrame
+from customtkinter import CTkLabel, CTkButton, CTkFrame, CTkSlider
+
+
+
+class ConfirmDialog(ctk.CTkToplevel):
+    def __init__(self, master, message="Are you sure?"):
+        super().__init__(master)
+
+        self.result = None  # Tutaj będzie True/False
+        self.title("Confirmation")
+
+        self.geometry("400x150")
+        self.grab_set()  # Zablokuj inne okna, dopóki to nie zostanie zamknięte
+        self.focus_force()
+        self.resizable(False, False)
+
+        # Wyśrodkowanie
+        self.update_idletasks()
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (400 // 2)
+        y = (screen_height // 2) - (150 // 2)
+        self.geometry(f"+{x}+{y}")
+
+        # Label
+        label = ctk.CTkLabel(self, text=message, font=("Arial", 16))
+        label.pack(pady=20)
+
+        # Buttons
+        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
+        btn_frame.pack()
+
+        yes_btn = ctk.CTkButton(btn_frame, text="Yes", command=self.yes)
+        no_btn = ctk.CTkButton(btn_frame, text="No", command=self.no)
+        yes_btn.pack(side="left", padx=10)
+        no_btn.pack(side="left", padx=10)
+
+        self.protocol("WM_DELETE_WINDOW", self.no)  # Zamknięcie = No
+
+    def yes(self):
+        self.result = True
+        self.destroy()
+
+    def no(self):
+        self.result = False
+        self.destroy()
+
 
 
 class Popup(ctk.CTkToplevel):
@@ -69,12 +115,17 @@ class GUIManager:
         # Window variables
         self.running = True
 
+        # Slider
+        self.rebirth_progress_slider = None
+
         # String variables
         self.points_text_var = ctk.StringVar()
         self.idle_text_var = ctk.StringVar()
         self.statistics_text_var = ctk.StringVar()
+        self.rebirth_points_var = ctk.StringVar()
         self.upgrades_text_variables = []
         self.achievements_text_variables = []
+        self.rebirth_bonuses_variables = []
 
     @staticmethod
     def add_label_textvar(master, text_var, font_name="Arial", font_size=12):
@@ -218,11 +269,22 @@ class GUIManager:
 
         # Elements
 
+        rebirth_points_label = self.add_label_textvar(rebirth_frame, text_var=self.rebirth_points_var, font_size=20)
+        rebirth_points_label.pack(side="top")
+
+
+
         rebirth_exit_button = self.add_button(rebirth_frame, "Exit",
                                               func=lambda: self.toggle_frame(rebirth_frame, main_window,
                                                                              upgrade_menu), width=100, height=50)
 
         rebirth_exit_button.pack(side="bottom")
+
+        rebirth_button = self.add_button(rebirth_frame, text="Rebirth", func=self.confirm_rebirth, width=200, height=50)
+        rebirth_button.pack(side="bottom", pady=15)
+
+        self.rebirth_progress_slider = CTkSlider(rebirth_frame, from_=0, to=100, state="disabled")
+        self.rebirth_progress_slider.pack(side="bottom", pady=20)
 
         # Upgrade Menu
 
@@ -233,6 +295,16 @@ class GUIManager:
         upgrade_label = self.add_label(upgrade_menu, "UPGRADES", font_size=20)
         upgrade_label.pack()
 
+        # Rebirths
+        for _ in self.rebirth.rebirth_bonuses:
+            self.rebirth_bonuses_variables.append(ctk.StringVar())
+
+        for nr, i in enumerate(self.rebirth.rebirth_bonuses):
+            button = self.add_button_textvar(rebirth_frame, text_var=self.rebirth_bonuses_variables[nr],
+                                             func=partial(self.rebirth.buy_rebirth_bonus, i['name'], self.app),
+                                             width=190, fg="#000000")
+            button.pack(pady=5, ipady=5)
+
         # Upgrades
 
         for _ in self.shop.upgrades:
@@ -241,10 +313,20 @@ class GUIManager:
         for nr, i in enumerate(self.shop.upgrades):
             button = self.add_button_textvar(upgrade_menu,
                                              text_var=self.upgrades_text_variables[nr][0],
-                                             func=partial(self.shop.shop_menu, i['name'], self.app), width=190,
-                                             fg="#000000")
+                                             func=partial(self.shop.shop_menu, i['name'], self.app),
+                                             width=190, fg="#000000")
 
             button.pack(pady=5, ipady=5)
+
+    def confirm_rebirth(self):
+        if self.rebirth.can_rebirth():
+            popup = ConfirmDialog(self.app, "Are you sure?")
+            self.app.wait_window(popup)
+            if popup.result:
+                self.rebirth.rebirth(self.app)
+        else:
+            self.rebirth.rebirth(self.app)
+
 
     def run(self):
         self.update_text_var()
@@ -278,24 +360,21 @@ class GUIManager:
                 self.upgrades_text_variables[nr][0].set(
                     f"{i['name']}\nCost: {i['cost']}\nIdle: {i['idle']}\nCount: {self.shop.count_upgrades(i['name'])}")
 
+        # Rebirths
+        self.rebirth_points_var.set(f"Rebirth points: {self.rebirth.rebirths_points}")
+        for nr, i in enumerate(self.rebirth.rebirth_bonuses):
+            self.rebirth_bonuses_variables[nr].set(i['name'])
+
+        self.rebirth_progress_slider.set(self.rebirth.get_rebirth_done_perc())
+
         # Statistics
         self.statistics_text_var.set(
             StatsManager.show_stats(self.point_manager, self.shop, self.achievements, self.rebirth))
-
         self.app.after(100, self.update_text_var)
 
 
-class OutputManager:
-    @staticmethod
-    def print_out(text):
-        print(text)
-
-    @staticmethod
-    def print_in():
-        return input()
-
-
 class SavegameManager:
+
     def __init__(self, points_manager, shop, achievements, rebirth):
         """
         :type points_manager: PointManager
@@ -379,6 +458,7 @@ class SavegameManager:
 
 
 class StatsManager:
+
     @staticmethod
     def show_stats(point_manager, shop, achievements, rebirth):
         """
@@ -442,12 +522,12 @@ class PointManager:
         self.click_multiplier = 1
 
     def click(self):
-        self.total_points = 1 * self.click_multiplier * self.rebirth_click_multiplier
-        self.points += 1 * self.click_multiplier * self.rebirth_click_multiplier
+        self.total_points = int(1 * self.click_multiplier * self.rebirth_click_multiplier)
+        self.points += int(1 * self.click_multiplier * self.rebirth_click_multiplier)
         self.total_clicks += 1
 
     def idle_point(self):
-        self.points += self.idle * self.rebirth_idle
+        self.points += int(self.idle * self.rebirth_idle)
 
     def can_afford(self, cost):
         return cost <= self.points
@@ -697,52 +777,40 @@ class Rebirth:
         ]
 
     def get_bonuses_list(self):
-        output = ""
+        output = []
         for nr, upgrade in enumerate(self.rebirth_bonuses):
-            output += f"{nr}. {upgrade['name']}"
+            output.append(upgrade['name'])
         return output
 
-    def rebirth_shop(self):
-        OutputManager.print_out("Which one do you want to buy?")
-        OutputManager.print_out(self.get_bonuses_list())
-        OutputManager.print_out("Exit. Back")
-        while True:
-            user_input = OutputManager.print_in()
-            bonus_nr = 0
-            if user_input.lower() in ['q', 'exit']:
-                return
-            try:
-                bonus_nr = int(user_input)
-                if 0 <= bonus_nr < len(self.rebirth_bonuses):
-                    break
-                else:
-                    OutputManager.print_out("Invalid upgrade number!")
-                    return
-            except ValueError:
-                OutputManager.print_out("It has to be a number!")
-            if self.rebirths_points > 0:
-                match self.rebirth_bonuses[bonus_nr]["type"]:
-                    case "click":
-                        self.point_manager.rebirth_click_multiplier += self.rebirth_bonuses[bonus_nr]["amount"]
-                        OutputManager.print_out(
-                            f"Click multiplier increased to: {self.point_manager.rebirth_click_multiplier}")
-                    case "idle":
-                        self.point_manager.rebirth_idle += self.rebirth_bonuses[bonus_nr]['amount']
-                        OutputManager.print_out(f"Idle multiplier increased to: {self.point_manager.rebirth_idle}")
-                    case "cost":
-                        self.shop.rebirth_discount += self.rebirth_bonuses[bonus_nr]['amount']
-                        OutputManager.print_out(f"Upgrades are discounted to: {self.shop.rebirth_discount}%")
-                    case "starting_points":
-                        self.rebirth_starting_points += self.rebirth_bonuses[bonus_nr]['amount']
-                        OutputManager.print_out(f"Starting points increased to: {self.rebirth_starting_points}")
-                self.rebirths_points -= 1
-            else:
-                OutputManager.print_out("Not enough rebirth points to buy!")
+    def buy_rebirth_bonus(self, name, master):
+        bonus_nr = 0
+        for nr, x in enumerate(self.rebirth_bonuses):
+            if x['name'] == name:
+                bonus_nr = nr
+                break
+        if self.rebirths_points > 0:
+            match self.rebirth_bonuses[bonus_nr]["type"]:
+                case "click":
+                    self.point_manager.rebirth_click_multiplier += self.rebirth_bonuses[bonus_nr]["amount"]
+                    Popup(master,
+                        f"Click multiplier increased to: {self.point_manager.rebirth_click_multiplier}")
+                case "idle":
+                    self.point_manager.rebirth_idle += self.rebirth_bonuses[bonus_nr]['amount']
+                    Popup(master, f"Idle multiplier increased to: {self.point_manager.rebirth_idle}")
+                case "cost":
+                    self.shop.rebirth_discount += self.rebirth_bonuses[bonus_nr]['amount']
+                    Popup(master, f"Upgrades are discounted to: {self.shop.rebirth_discount}%")
+                case "starting_points":
+                    self.rebirth_starting_points += self.rebirth_bonuses[bonus_nr]['amount']
+                    Popup(master, f"Starting points increased to: {self.rebirth_starting_points}")
+            self.rebirths_points -= 1
+        else:
+            Popup(master=master, message="Not enough rebirth points to buy!")
 
     def can_rebirth(self):
         return self.point_manager.points >= self.rebirth_condition
 
-    def rebirth(self):
+    def rebirth(self, master):
         if self.can_rebirth():
             self.points_record = max(self.points_record, self.point_manager.points)
             self.point_manager.points = self.rebirth_starting_points
@@ -774,7 +842,11 @@ class Rebirth:
                 {"name": "Omega Core", "cost": 1550, "click_mult": 0, "idle": 50},
                 {"name": "Eternity Engine", "cost": 1730, "click_mult": 20, "idle": 0},
             ]
+        else:
+            Popup(master, "You don't have enough points to rebirth!")
 
+    def get_rebirth_done_perc(self):
+        return int((self.point_manager.points / self.rebirth_condition) * 100)
 
 if __name__ == "__main__":
     pt_manager = PointManager()
@@ -813,8 +885,8 @@ if __name__ == "__main__":
 #  - [x] Update upgrade costs dynamically in GUI after each purchase
 #  - [x] Add save and load buttons, call SavegameManager.save_game() and load_game()
 #  - [x] Add idle point timer updating PointManager.idle_point() periodically
-#  - [ ] Add CTkEntry input box with confirm button to replace input() for user choices
-#  - [ ] Add rebirth shop UI with bonus list and buttons to buy rebirth bonuses
-#  - [ ] Implement rebirth reset logic and GUI refresh after rebirth()
-#  - [ ] Add progress bar showing progress to next rebirth
-#  - [ ] Design layout with frames/panels for points display, shop, rebirth, achievements, and logs
+#  - [x] Add rebirth shop UI with bonus list and buttons to buy rebirth bonuses
+#  - [x] Implement rebirth reset logic and GUI refresh after rebirth()
+#  - [x] Add progress bar showing progress to next rebirth
+#  - [x] Add CTkEntry input box with confirm button to replace input() for user choices
+#  - [x] Design layout with frames/panels for points display, shop, rebirth, achievements, and logs
