@@ -1,4 +1,4 @@
-# ⚛️ Clickyker: Reactor Clicker Madness ⚛️
+# ⚛️ Idle:Fission ⚛️
 
 **Clickyker** is a minimalist yet addictive idle clicker game where every click fuels your journey to power! Generate energy points, upgrade futuristic components, unlock achievements, and dive into the rebirth system to gain permanent bonuses and scale infinitely.
 
