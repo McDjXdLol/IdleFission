@@ -353,9 +353,6 @@ class GUIManager:
         self.points_text_var.set(f"Points: {self.point_manager.points}")
         self.idle_text_var.set(f"Idle: {self.point_manager.idle}")
 
-        # DEBUG
-        self.point_manager.click()
-
         # Achievements
         for nr, i in enumerate(self.achievements.achievements):
             ach_data = self.achievements.get_ach_data(i['id'])
