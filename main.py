@@ -236,28 +236,31 @@ class GUIManager:
 
         # Achievements
 
-        achievements_frame = self.add_Frame(self.app, 200, 200)
+        achievements_frame = self.add_Frame(self.app, width=0, height=0)
         achievements_frame.pack(fill="both", expand=True)
         achievements_frame.pack_forget()
 
-        # Elements
+        achievements_scrollable_frame = self.add_scrollableFrame(achievements_frame, width=600, height=600)
+        achievements_scrollable_frame.pack(fill="both", expand=False, pady=10)
 
-        achv_label = self.add_label(achievements_frame, "ACHIEVEMENTS:", font_size=20)
-        achv_label.pack()
+        # Elements
+        achv_label = self.add_label(achievements_scrollable_frame, "ACHIEVEMENTS:", font_size=20)
+        achv_label.pack(side="top")
 
         for _ in self.achievements.achievements:
             self.achievements_text_variables.append(ctk.StringVar())
 
         for nr, i in enumerate(self.achievements.achievements):
-            label = self.add_label_textvar(achievements_frame,
-                                           text_var=self.achievements_text_variables[nr])
+            label = self.add_label_textvar(achievements_scrollable_frame,
+                                           text_var=self.achievements_text_variables[nr],
+                                           font_size=14)
+            label.pack()
 
-            label.pack(pady=5, ipady=5)
-
-        exit_achv_button = self.add_button(achievements_frame, "Exit",
+        # Przycisk Exit na samym dole
+        exit_achv_button = self.add_button(achievements_scrollable_frame, "Exit",
                                            func=lambda: self.toggle_frame(achievements_frame, main_window,
                                                                           upgrade_menu), width=100, height=50)
-        exit_achv_button.pack(side="bottom")
+        exit_achv_button.pack(pady=20)
 
         # Rebirth
 
@@ -546,25 +549,36 @@ class Shop:
         self.upgrades = [
             {"name": "Tiny Reactor Boost", "cost": 5, "click_mult": 1, "idle": 0},
             {"name": "Small Capacitor", "cost": 15, "click_mult": 2, "idle": 0},
-            {"name": "Heat Sink", "cost": 30, "click_mult": 0, "idle": 1},
+            {"name": "Heat Sink", "cost": 30, "click_mult": 0, "idle": 3},
             {"name": "Power Amplifier", "cost": 50, "click_mult": 3, "idle": 0},
-            {"name": "Quantum Flux", "cost": 80, "click_mult": 0, "idle": 3},
+            {"name": "Quantum Flux", "cost": 80, "click_mult": 0, "idle": 5},
             {"name": "Nano Circuit", "cost": 120, "click_mult": 4, "idle": 0},
-            {"name": "Superconductor", "cost": 170, "click_mult": 0, "idle": 5},
+            {"name": "Superconductor", "cost": 170, "click_mult": 0, "idle": 10},
             {"name": "Particle Accelerator", "cost": 230, "click_mult": 5, "idle": 0},
-            {"name": "Dark Matter Collector", "cost": 300, "click_mult": 0, "idle": 10},
+            {"name": "Dark Matter Collector", "cost": 300, "click_mult": 0, "idle": 20},
             {"name": "Plasma Converter", "cost": 380, "click_mult": 6, "idle": 0},
-            {"name": "Fusion Core", "cost": 470, "click_mult": 0, "idle": 15},
+            {"name": "Fusion Core", "cost": 470, "click_mult": 0, "idle": 25},
             {"name": "Antimatter Storage", "cost": 570, "click_mult": 8, "idle": 0},
-            {"name": "Graviton Emitter", "cost": 680, "click_mult": 0, "idle": 20},
+            {"name": "Graviton Emitter", "cost": 680, "click_mult": 0, "idle": 40},
             {"name": "Chrono Stabilizer", "cost": 800, "click_mult": 10, "idle": 0},
-            {"name": "Dimensional Rift", "cost": 930, "click_mult": 0, "idle": 30},
+            {"name": "Dimensional Rift", "cost": 930, "click_mult": 0, "idle": 60},
             {"name": "Energy Matrix", "cost": 1070, "click_mult": 12, "idle": 0},
-            {"name": "Singularity Reactor", "cost": 1220, "click_mult": 0, "idle": 40},
+            {"name": "Singularity Reactor", "cost": 1220, "click_mult": 0, "idle": 80},
             {"name": "Neutrino Collector", "cost": 1380, "click_mult": 15, "idle": 0},
-            {"name": "Omega Core", "cost": 1550, "click_mult": 0, "idle": 50},
+            {"name": "Omega Core", "cost": 1550, "click_mult": 0, "idle": 100},
             {"name": "Eternity Engine", "cost": 1730, "click_mult": 20, "idle": 0},
         ]
+        for nr, upgrade in enumerate(self.upgrades):
+            if nr >= int(len(self.upgrades)/2):
+                upgrade['cost'] = int(upgrade['cost'] * 7)
+                upgrade['idle'] = int(upgrade['idle'] * 9)
+            elif nr >= int(len(self.upgrades)/3):
+                upgrade['cost'] = int(upgrade['cost'] * 5)
+                upgrade['idle'] = int(upgrade['idle'] * 7)
+            else:
+                upgrade['cost'] = int(upgrade['cost'] * 3)
+                upgrade['idle'] = int(upgrade['idle'] * 5)
+
         self.rebirth_discount = 1
         self.point_manager = point_manager
         self.bought_upgrades = []
@@ -604,15 +618,17 @@ class Shop:
         cost = int(self.upgrades[upgrade_nr]["cost"] * self.rebirth_discount)
         if self.point_manager.can_afford(cost=cost):
             if self.add_upgrade(self.upgrades[upgrade_nr]["name"], master):
-                self.upgrades[upgrade_nr]['cost'] = int(self.upgrades[upgrade_nr]['cost'] * 1.20)
+                self.upgrades[upgrade_nr]['cost'] = int(self.upgrades[upgrade_nr]['cost'] * 1.3)
                 self.point_manager.spend_points(cost=cost)
         else:
             Popup(master, "Not enough points to buy upgrade!")
 
 
 class Achievements:
-    def __init__(self, point_manager, shop):
+    def __init__(self, point_manager, shop, rebirth):
         """
+        :type rebirth: Rebirth
+        :param rebirth: Object with Rebirth Class
         :type point_manager PointManager
         :param point_manager: Object with PointManager Class
         :type shop: Shop
@@ -620,6 +636,7 @@ class Achievements:
         """
         self.point_manager = point_manager
         self.shop = shop
+        self.rebirth = rebirth
         self.achievements = [
             {
                 "id": "first_click",
@@ -636,7 +653,7 @@ class Achievements:
             {
                 "id": "idle_master",
                 "name": "Idle Master",
-                "reward": 50000,
+                "reward": 2000,
                 "condition_id": "idle_1000"
             },
             {
@@ -645,6 +662,42 @@ class Achievements:
                 "reward": 75,
                 "condition_id": "upgrades_10"
             },
+            {
+                "id": "upgrade_hoarder",
+                "name": "Upgrade Hoarder",
+                "reward": 1500,
+                "condition_id": "upgrades_50"
+            },
+            {
+                "id": "first_rebirth",
+                "name": "First Rebirth",
+                "reward": 5000,
+                "condition_id": "rebirths_1"
+            },
+            {
+                "id": "time_flies",
+                "name": "Time Flies",
+                "reward": 2000,
+                "condition_id": "time_1"
+            },
+            {
+                "id": "prestige_collector",
+                "name": "Prestige Collector",
+                "reward": 5000,
+                "condition_id": "rebirths_5"
+            },
+            {
+                "id": "quantum_break",
+                "name": "Quantum Break",
+                "reward": 2000,
+                "condition_id": "upgrade_quantum"
+            },
+            {
+                "id": "the_grind_begins",
+                "name": "The Grind Begins",
+                "reward": 10000,
+                "condition_id": "points_1000000"
+            }
         ]
         self.conditions = [
             {
@@ -675,6 +728,48 @@ class Achievements:
                 "condition_value": 10,
                 "unlocked": False
             },
+            {
+                "title": "upgrades_50",
+                "description": "Buy 50 upgrades",
+                "condition_name": "upgrades",
+                "condition_value": 50,
+                "unlocked": False
+            },
+            {
+                "title": "rebirths_1",
+                "description": "Get 1 Rebirth",
+                "condition_name": "rebirth",
+                "condition_value": 1,
+                "unlocked": False
+            },
+            {
+                "title": "time_1",
+                "description": "Play for 1 hour",
+                "condition_name": "time",
+                "condition_value": 3600,
+                "unlocked": False
+            },
+            {
+                "title": "rebirths_5",
+                "description": "Get 5 rebirths",
+                "condition_name": "rebirth",
+                "condition_value": 5,
+                "unlocked": False
+            },
+            {
+                "title": "upgrade_quantum",
+                "description": "Get 'Dimensional Rift' Upgrade",
+                "condition_name": "upgrade",
+                "condition_value": "Dimensional Rift",
+                "unlocked": False
+            },
+            {
+                "title": "points_1000000",
+                "description": "Have 1,000,000 points at once",
+                "condition_name": "points",
+                "condition_value": 1000000,
+                "unlocked": False
+            }
         ]
 
     def unlock_ach(self, master, title):
@@ -731,6 +826,27 @@ class Achievements:
                         if condition["condition_value"] <= len(self.shop.bought_upgrades):
                             self.unlock_ach(master, condition["title"])
                             return True
+                    case "rebirth":
+                        if condition["condition_value"] <= self.rebirth.rebirths:
+                            self.unlock_ach(master, condition["title"])
+                    case "time":
+                        if condition["condition_value"] <= self.point_manager.time_played:
+                            self.unlock_ach(master, condition["title"])
+                    case "rebirth_points":
+                        if condition["condition_value"] <= self.rebirth.rebirths_points:
+                            self.unlock_ach(master, condition["title"])
+                    case "discount":
+                        if condition["condition_value"] <= self.shop.rebirth_discount:
+                            self.unlock_ach(master, condition["title"])
+                    case "upgrade_bought":
+                        for upgrade in self.shop.bought_upgrades:
+                            if upgrade[0] == condition["title"]:
+                                self.unlock_ach(master, condition["title"])
+                            break
+                    case "points":
+                        if condition["condition_value"] <= self.point_manager.points:
+                            self.unlock_ach(master, condition["title"])
+
         return None
 
 
@@ -853,8 +969,8 @@ class Rebirth:
 if __name__ == "__main__":
     pt_manager = PointManager()
     shop = Shop(pt_manager)
-    achv = Achievements(pt_manager, shop)
     rebir = Rebirth(pt_manager, shop)
+    achv = Achievements(pt_manager, shop, rebir)
     GUI = GUIManager(pt_manager, shop, achv, rebir)
     app = GUI.app
     GUI.build()
