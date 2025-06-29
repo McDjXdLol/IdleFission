@@ -59,7 +59,7 @@ class GUIManager:
         self.HEIGHT = 600
         self.app = ctk.CTk()
         self.app.geometry(f"{self.WIDTH}x{self.HEIGHT}")
-        self.app.title("Clickyker")
+        self.app.title("Idle Fission")
 
         # Application icon path handling for PyInstaller and normal run
         if hasattr(sys, '_MEIPASS'):
